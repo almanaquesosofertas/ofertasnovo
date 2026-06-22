@@ -1,0 +1,350 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Dashboard Instagram — Almanaque SOS</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: system-ui, -apple-system, sans-serif; background: #f5f5f2; color: #1a1a18; }
+.page { max-width: 960px; margin: 0 auto; padding: 28px 20px; }
+.nav { display: flex; gap: 4px; margin-bottom: 24px; background: #e8e8e5; border-radius: 12px; padding: 4px; width: fit-content; }
+.nav-btn { padding: 8px 20px; border-radius: 9px; border: none; background: transparent; font-size: 13px; font-weight: 500; color: #666; cursor: pointer; transition: all .15s; }
+.nav-btn.active { background: #fff; color: #1a1a18; box-shadow: 0 1px 3px rgba(0,0,0,.12); }
+.tab { display: none; } .tab.active { display: block; }
+h1 { font-size: 20px; font-weight: 500; margin-bottom: 4px; }
+.sub { font-size: 13px; color: #888; margin-bottom: 24px; }
+.section { margin-bottom: 28px; }
+.st { font-size: 11px; font-weight: 600; color: #888; text-transform: uppercase; letter-spacing: .07em; margin-bottom: 12px; }
+.kpi-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 8px; }
+.kpi { background: #fff; border-radius: 12px; padding: 14px; border: .5px solid #e5e5e3; }
+.kpi-label { font-size: 12px; color: #888; margin-bottom: 4px; }
+.kpi-value { font-size: 22px; font-weight: 500; line-height: 1; }
+.kpi-sub { font-size: 11px; color: #aaa; margin-top: 4px; }
+.week-grid { display: grid; grid-template-columns: repeat(4,1fr); gap: 8px; }
+.wc { background: #fff; border-radius: 12px; padding: 12px; border: .5px solid #e5e5e3; }
+.wc-lbl { font-size: 11px; color: #888; margin-bottom: 6px; }
+.wc-v { font-size: 16px; font-weight: 500; margin-bottom: 3px; }
+.wbar { height: 4px; background: #eee; border-radius: 2px; margin-top: 8px; }
+.wbar-f { height: 100%; border-radius: 2px; }
+.chart-box { background: #fff; border: .5px solid #e5e5e3; border-radius: 14px; padding: 16px; margin-bottom: 10px; }
+.legend { display: flex; flex-wrap: wrap; gap: 12px; margin-bottom: 12px; font-size: 12px; color: #666; }
+.legend span { display: flex; align-items: center; gap: 5px; }
+.leg { width: 10px; height: 10px; border-radius: 2px; flex-shrink: 0; }
+.post-table { width: 100%; border-collapse: collapse; font-size: 12px; }
+.post-table th { text-align: left; font-size: 11px; color: #888; font-weight: 500; padding: 7px 8px; border-bottom: .5px solid #eee; }
+.post-table td { padding: 9px 8px; border-bottom: .5px solid #f0f0ee; vertical-align: middle; }
+.post-table tr:last-child td { border-bottom: none; }
+.post-table tr:hover td { background: #fafaf8; }
+.badge { display: inline-block; font-size: 10px; padding: 2px 7px; border-radius: 20px; font-weight: 500; }
+.badge-publi { background: #FAEEDA; color: #854F0B; }
+.badge-org { background: #EAF3DE; color: #3B6D11; }
+.ebw { display: flex; align-items: center; gap: 5px; }
+.ebar { height: 5px; background: #eee; border-radius: 3px; width: 60px; }
+.efill { height: 100%; border-radius: 3px; background: #D4537E; }
+.insight { border-radius: 12px; padding: 12px 14px; margin-bottom: 8px; font-size: 13px; line-height: 1.6; }
+.ins-g { background: #EAF3DE; color: #2a4a12; }
+.ins-a { background: #FAEEDA; color: #5A3100; }
+.ins-b { background: #E6F1FB; color: #0C3466; }
+/* comments */
+.ck-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(110px,1fr)); gap: 8px; margin-bottom: 20px; }
+.ck { background: #fff; border-radius: 12px; padding: 12px; border: .5px solid #e5e5e3; text-align: center; }
+.ck-val { font-size: 24px; font-weight: 500; margin-bottom: 2px; }
+.ck-lbl { font-size: 12px; color: #888; }
+.ck-pct { font-size: 11px; color: #aaa; margin-top: 2px; }
+.rtabs { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 14px; }
+.rtab { padding: 5px 13px; border-radius: 20px; border: .5px solid #ccc; background: #fff; font-size: 12px; color: #555; cursor: pointer; transition: all .15s; }
+.rtab.active { background: #1a1a18; color: #fff; border-color: #1a1a18; }
+.rpanel { display: none; } .rpanel.active { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+@media(max-width:580px){ .rpanel.active,.top-cg,.week-grid { grid-template-columns: 1fr; } }
+.rsbox { background: #fff; border-radius: 14px; border: .5px solid #e5e5e3; padding: 16px; }
+.rsbox-t { font-size: 13px; font-weight: 600; margin-bottom: 12px; }
+.srow { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; }
+.slbl { font-size: 12px; width: 74px; flex-shrink: 0; color: #555; }
+.sbw { flex: 1; background: #f0f0ee; border-radius: 4px; height: 7px; }
+.sb { height: 100%; border-radius: 4px; }
+.scnt { font-size: 12px; color: #888; width: 36px; text-align: right; flex-shrink: 0; }
+.spct { font-size: 11px; color: #aaa; width: 34px; text-align: right; flex-shrink: 0; }
+.csamples { background: #fff; border-radius: 14px; border: .5px solid #e5e5e3; padding: 16px; grid-column: 1/-1; }
+.ccard { background: #fafaf8; border-radius: 10px; padding: 10px 12px; margin-bottom: 7px; border-left: 3px solid #ddd; }
+.ccard.pos { border-left-color: #3B6D11; }
+.ccard.neg { border-left-color: #A32D2D; }
+.ccard.ask { border-left-color: #378ADD; }
+.cmeta { font-size: 11px; color: #aaa; margin-bottom: 4px; display: flex; gap: 7px; align-items: center; flex-wrap: wrap; }
+.ctext { font-size: 13px; color: #1a1a18; line-height: 1.5; }
+.sbadge { font-size: 10px; padding: 1px 7px; border-radius: 20px; font-weight: 500; }
+.sbpos { background: #EAF3DE; color: #3B6D11; }
+.sbneg { background: #FCEBEB; color: #A32D2D; }
+.sbask { background: #E6F1FB; color: #0C447C; }
+.sbneu { background: #f0f0ee; color: #666; }
+.sbmisto { background: #FAEEDA; color: #854F0B; }
+.top-cg { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.tcc { background: #fff; border-radius: 12px; border: .5px solid #e5e5e3; padding: 14px; }
+.tct { font-size: 11px; font-weight: 600; color: #888; text-transform: uppercase; letter-spacing: .05em; margin-bottom: 10px; }
+.tci { padding: 8px 0; border-bottom: .5px solid #f0f0ee; }
+.tci:last-child { border-bottom: none; }
+.tcm { font-size: 11px; color: #aaa; margin-bottom: 3px; display: flex; gap: 7px; }
+.tctx { font-size: 12px; color: #1a1a18; line-height: 1.45; }
+.wpill { background: #fff; border-radius: 20px; padding: 4px 11px; font-size: 12px; color: #333; border: .5px solid #e5e5e3; display: inline-block; margin: 3px; }
+.wpill.lg { font-size: 14px; font-weight: 500; }
+.wpill.md { font-size: 13px; }
+</style>
+</head>
+<body>
+<div class="page">
+<h1>Dashboard Instagram — Almanaque SOS</h1>
+<p class="sub">@almanaquesos · 1.974.858 seguidores · 23/05 – 22/06/2026</p>
+
+<div class="nav">
+  <button class="nav-btn active" onclick="switchTab('metrics',this)">📊 Métricas</button>
+  <button class="nav-btn" onclick="switchTab('posts',this)">🎬 Reels</button>
+  <button class="nav-btn" onclick="switchTab('comments',this)">💬 Comentários</button>
+</div>
+
+<!-- METRICS -->
+<div id="tab-metrics" class="tab active">
+  <div class="section">
+    <div class="st">Visão geral — 30 dias</div>
+    <div class="kpi-grid">
+      <div class="kpi"><div class="kpi-label">Views totais</div><div class="kpi-value">21,2M</div><div class="kpi-sub">últimos 30 dias</div></div>
+      <div class="kpi"><div class="kpi-label">Interações</div><div class="kpi-value">1,90M</div><div class="kpi-sub">likes+shares+saves+comments</div></div>
+      <div class="kpi"><div class="kpi-label">Taxa engaj.</div><div class="kpi-value" style="color:#3B6D11">8,98%</div><div class="kpi-sub">interações / views</div></div>
+      <div class="kpi"><div class="kpi-label">Contas engajadas</div><div class="kpi-value">1,09M</div><div class="kpi-sub">contas únicas</div></div>
+      <div class="kpi"><div class="kpi-label">Novos seguidores</div><div class="kpi-value">+24,3k</div><div class="kpi-sub">primeiros 21 dias</div></div>
+      <div class="kpi"><div class="kpi-label">Shares</div><div class="kpi-value">340k</div><div class="kpi-sub">17,9% das interações</div></div>
+      <div class="kpi"><div class="kpi-label">Salvamentos</div><div class="kpi-value">213k</div><div class="kpi-sub">11,2% das interações</div></div>
+      <div class="kpi"><div class="kpi-label">Melhor dia</div><div class="kpi-value">27/05</div><div class="kpi-sub">302k interações</div></div>
+    </div>
+  </div>
+  <div class="section">
+    <div class="st">Comparativo semanal</div>
+    <div class="week-grid">
+      <div class="wc"><div class="wc-lbl">Sem 1 · 23–29/05</div><div class="wc-v">5,17M views</div><div style="font-size:13px;color:#3B6D11;font-weight:500">16,2% eng.</div><div class="wbar"><div class="wbar-f" style="width:100%;background:#3B6D11"></div></div></div>
+      <div class="wc"><div class="wc-lbl">Sem 2 · 30/05–05/06</div><div class="wc-v">4,08M views</div><div style="font-size:13px;color:#378ADD;font-weight:500">11,4% eng.</div><div class="wbar"><div class="wbar-f" style="width:70%;background:#378ADD"></div></div></div>
+      <div class="wc"><div class="wc-lbl">Sem 3 · 06–12/06</div><div class="wc-v">3,13M views</div><div style="font-size:13px;color:#BA7517;font-weight:500">9,4% eng.</div><div class="wbar"><div class="wbar-f" style="width:58%;background:#BA7517"></div></div></div>
+      <div class="wc"><div class="wc-lbl">Sem 4 · 13–22/06</div><div class="wc-v">8,81M views</div><div style="font-size:13px;color:#A32D2D;font-weight:500">3,4% eng.</div><div class="wbar"><div class="wbar-f" style="width:21%;background:#A32D2D"></div></div></div>
+    </div>
+  </div>
+  <div class="section">
+    <div class="st">Views e alcance diário</div>
+    <div class="chart-box">
+      <div class="legend"><span><span class="leg" style="background:#378ADD"></span>Views</span><span><span class="leg" style="background:#1D9E75"></span>Alcance</span></div>
+      <div style="position:relative;width:100%;height:220px;"><canvas id="reachChart"></canvas></div>
+    </div>
+  </div>
+  <div class="section">
+    <div class="st">Engajamento diário</div>
+    <div class="chart-box">
+      <div class="legend"><span><span class="leg" style="background:#D4537E"></span>Curtidas</span><span><span class="leg" style="background:#BA7517"></span>Shares</span><span><span class="leg" style="background:#7F77DD"></span>Saves</span><span><span class="leg" style="background:#888780"></span>Comentários</span></div>
+      <div style="position:relative;width:100%;height:220px;"><canvas id="engChart"></canvas></div>
+    </div>
+  </div>
+  <div class="section">
+    <div class="st">Insights</div>
+    <div class="insight ins-g"><strong>🏆 Semana 1 é o benchmark.</strong> 16,2% de engajamento médio, impulsionada pelo Cacau em Pó: 2,6M views, 517k interações, 158k shares e 103k saves.</div>
+    <div class="insight ins-a"><strong>⚠️ Semana 4: paradoxo views × engajamento.</strong> 8,8M de views mas apenas 3,4% de engajamento. Viralização passiva — algoritmo distribuindo sem gerar ação.</div>
+    <div class="insight ins-b"><strong>💡 Salvamentos indicam intenção real.</strong> Pudim Cocada: 16k saves. Conteúdo "quero tentar em casa" sinaliza relevância de longo prazo ao algoritmo.</div>
+    <div class="insight ins-a"><strong>📉 Publis abaixo da média orgânica.</strong> Sazón: 2,6% eng. SBP: 7,3%. Vale revisar o formato de entrega das publicidades.</div>
+  </div>
+</div>
+
+<!-- POSTS -->
+<div id="tab-posts" class="tab">
+  <div class="section">
+    <div class="st">Performance dos reels</div>
+    <div class="chart-box" style="overflow-x:auto;">
+      <table class="post-table">
+        <thead><tr><th>#</th><th>Título</th><th>Tipo</th><th>Views</th><th>Interações</th><th>Eng.%</th><th>Shares</th><th>Saves</th></tr></thead>
+        <tbody id="postBody"></tbody>
+      </table>
+    </div>
+  </div>
+  <div class="section">
+    <div class="st">Views por reel</div>
+    <div class="chart-box"><div style="position:relative;width:100%;height:280px;"><canvas id="reelBar"></canvas></div></div>
+  </div>
+  <div class="section">
+    <div class="st">Taxa de engajamento por reel (%)</div>
+    <div class="chart-box"><div style="position:relative;width:100%;height:280px;"><canvas id="reelEng"></canvas></div></div>
+  </div>
+</div>
+
+<!-- COMMENTS -->
+<div id="tab-comments" class="tab">
+  <div class="section">
+    <div class="st">Visão geral — 7.163 comentários (30 dias)</div>
+    <div class="ck-grid">
+      <div class="ck"><div class="ck-val" style="color:#3B6D11">1.613</div><div class="ck-lbl">Positivos</div><div class="ck-pct">22,5%</div></div>
+      <div class="ck"><div class="ck-val">4.452</div><div class="ck-lbl">Neutros</div><div class="ck-pct">62,2%</div></div>
+      <div class="ck"><div class="ck-val" style="color:#0C447C">948</div><div class="ck-lbl">Perguntas</div><div class="ck-pct">13,2%</div></div>
+      <div class="ck"><div class="ck-val" style="color:#854F0B">53</div><div class="ck-lbl">Mistos</div><div class="ck-pct">0,7%</div></div>
+      <div class="ck"><div class="ck-val" style="color:#A32D2D">97</div><div class="ck-lbl">Negativos</div><div class="ck-pct">1,4%</div></div>
+    </div>
+  </div>
+  <div class="section">
+    <div class="st">Análise por reel</div>
+    <div class="rtabs" id="reelTabsComm"></div>
+    <div id="reelPanels"></div>
+  </div>
+  <div class="section">
+    <div class="st">Volume de comentários por dia</div>
+    <div class="chart-box">
+      <div class="legend"><span><span class="leg" style="background:#3B6D11"></span>Positivo</span><span><span class="leg" style="background:#888780"></span>Neutro</span><span><span class="leg" style="background:#185FA5"></span>Pergunta</span><span><span class="leg" style="background:#A32D2D"></span>Negativo</span></div>
+      <div style="position:relative;width:100%;height:220px;"><canvas id="commDay"></canvas></div>
+    </div>
+  </div>
+  <div class="section">
+    <div class="st">Mais curtidos e mais respondidos</div>
+    <div class="top-cg">
+      <div class="tcc"><div class="tct">👍 Mais curtidos</div><div id="topLiked"></div></div>
+      <div class="tcc"><div class="tct">💬 Mais respondidos</div><div id="topReplied"></div></div>
+    </div>
+  </div>
+  <div class="section">
+    <div class="st">Palavras mais frequentes</div>
+    <div class="chart-box" id="wordCloud"></div>
+  </div>
+  <div class="section">
+    <div class="st">Insights dos comentários</div>
+    <div class="insight ins-g"><strong>✅ Sentimento altamente positivo.</strong> Apenas 1,4% de negativos em 7.163 comentários. Audiência com forte afinidade com o canal — raro para contas de 2M.</div>
+    <div class="insight ins-b"><strong>❓ 948 perguntas sem resposta.</strong> Cada pergunta é uma pauta potencial de novo conteúdo — especialmente sobre receitas e técnicas do Cacau em Pó.</div>
+    <div class="insight ins-a"><strong>⚠️ Publis recebem mais ceticismo.</strong> Sazón e SBP concentram críticas proporcionalmente maiores. "Sazón??? Sério???" teve 75 curtidas — a audiência rejeita o produto, não o canal.</div>
+    <div class="insight ins-g"><strong>🔥 Gatilho comprovado: "você fez errado a vida toda".</strong> Comentário com 2.956 curtidas no Cacau em Pó. Formato de revelação gera identificação massiva.</div>
+  </div>
+</div>
+</div>
+
+<script>
+function switchTab(id,btn){
+  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+  document.querySelectorAll('.nav-btn').forEach(b=>b.classList.remove('active'));
+  document.getElementById('tab-'+id).classList.add('active');
+  btn.classList.add('active');
+}
+const fmt=v=>v>=1e6?(v/1e6).toFixed(1)+'M':v>=1e3?Math.round(v/1e3)+'k':v;
+
+const days=["23/05","24/05","25/05","26/05","27/05","28/05","29/05","30/05","31/05","01/06","02/06","03/06","04/06","05/06","06/06","07/06","08/06","09/06","10/06","11/06","12/06","13/06","14/06","15/06","16/06","17/06","18/06","19/06","20/06","21/06"];
+const views=[990302,512293,389773,330899,1314716,1054934,575575,410611,364106,526193,962811,744766,565663,510467,330722,352392,381434,416496,620361,537100,494238,245959,367740,775926,709511,246149,242071,1749022,2105173,2373307];
+const reach=[647127,346575,270602,241870,875803,723629,380122,277305,256154,177143,520248,458176,351696,322963,205553,228908,236352,240871,354995,298683,287727,171633,245889,259230,315906,157988,168605,1538800,1861384,2137351];
+const likes=[66530,29802,18556,14900,122502,87218,41236,32299,26791,36779,55086,38316,37107,27575,19588,21814,17863,23763,38199,22937,16464,12276,18554,32860,29512,14761,15137,15802,22942,20440];
+const shares=[16040,8714,5981,4948,66252,46593,17535,13269,11012,14402,14769,9232,10647,6836,5231,7131,4758,4615,14075,8024,4617,3423,4665,9914,6749,4591,4321,2923,4542,4616];
+const saves=[13764,5387,3452,2420,42900,30295,10129,7673,6498,7590,7228,4898,6347,4400,3102,3972,2582,2406,11780,6325,3682,2243,2839,4435,3989,2521,2349,2067,3020,2773];
+const comms=[1003,656,378,265,2835,1947,738,508,879,887,773,517,438,421,216,328,302,459,502,264,248,145,164,494,358,116,97,152,141,178];
+
+new Chart(document.getElementById('reachChart'),{type:'line',data:{labels:days,datasets:[
+  {label:'Views',data:views,borderColor:'#378ADD',backgroundColor:'rgba(55,138,221,0.08)',fill:true,tension:0.3,pointRadius:2,borderWidth:1.8},
+  {label:'Alcance',data:reach,borderColor:'#1D9E75',backgroundColor:'rgba(29,158,117,0.06)',fill:true,tension:0.3,pointRadius:2,borderWidth:1.8}
+]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{ticks:{font:{size:10},maxRotation:45,autoSkip:true,maxTicksLimit:12}},y:{ticks:{callback:fmt,font:{size:10}}}}}});
+
+new Chart(document.getElementById('engChart'),{type:'bar',data:{labels:days,datasets:[
+  {label:'Curtidas',data:likes,backgroundColor:'#D4537E'},
+  {label:'Shares',data:shares,backgroundColor:'#BA7517'},
+  {label:'Saves',data:saves,backgroundColor:'#7F77DD'},
+  {label:'Comentários',data:comms,backgroundColor:'#888780'}
+]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{stacked:true,ticks:{font:{size:10},autoSkip:true,maxTicksLimit:12,maxRotation:45}},y:{stacked:true,ticks:{callback:fmt,font:{size:10}}}}}});
+
+const posts=[
+  {title:"Cacau em Pó: talvez você tenha usado errado",type:"org",views:2615049,eng:517301,shares:158353,saves:103187},
+  {title:"TESTE: Marshmallow do Amor",type:"org",views:1181332,eng:64930,shares:8829,saves:2645},
+  {title:"TESTE: Pudim Cocada de Doce de Leite",type:"org",views:537185,eng:66095,shares:16814,saves:16018},
+  {title:"Giz de Rua GIGANTE (🇧🇷 Copa do Mundo)",type:"org",views:419087,eng:41303,shares:7579,saves:3387},
+  {title:"Propaganda falsa (FAKE IA): o que fazer?",type:"org",views:387767,eng:18555,shares:1618,saves:793},
+  {title:"COMO LIMPAR: Garrafa Térmica",type:"org",views:357926,eng:32504,shares:2670,saves:1143},
+  {title:"3 Tipos de Massinha de Modelar Caseira",type:"org",views:325407,eng:19551,shares:3405,saves:4006},
+  {title:"DESAFIO: Partir a Maçã com as Mãos",type:"org",views:301080,eng:15838,shares:680,saves:280},
+  {title:"Luminária com Mosaico de Espelho",type:"org",views:204955,eng:9328,shares:166,saves:466},
+  {title:"REVIEW: Farofa SALVA CHURRASCO (Sazón)",type:"publi",views:220220,eng:5718,shares:282,saves:496},
+  {title:"Armadilha de Luz UV (SBP)",type:"publi",views:184107,eng:13468,shares:4548,saves:909},
+  {title:"TESTE: Como descascar PINHÃO fácil",type:"org",views:172477,eng:13264,shares:1838,saves:1058},
+];
+const maxEng=Math.max(...posts.map(p=>p.eng));
+const tb=document.getElementById('postBody');
+posts.forEach((p,i)=>{
+  const r=(p.eng/p.views*100).toFixed(1);
+  tb.innerHTML+=`<tr><td style="color:#aaa">${i+1}</td><td style="max-width:190px;line-height:1.4">${p.title}</td><td><span class="badge ${p.type==='publi'?'badge-publi':'badge-org'}">${p.type==='publi'?'Publi':'Org.'}</span></td><td>${fmt(p.views)}</td><td>${fmt(p.eng)}</td><td><div class="ebw"><div class="ebar"><div class="efill" style="width:${Math.max(3,p.eng/maxEng*100)}%"></div></div><span style="font-size:11px">${r}%</span></div></td><td>${fmt(p.shares)}</td><td>${fmt(p.saves)}</td></tr>`;
+});
+const rl=posts.map(p=>p.title.length>28?p.title.slice(0,26)+'…':p.title);
+new Chart(document.getElementById('reelBar'),{type:'bar',data:{labels:rl,datasets:[{data:posts.map(p=>p.views),backgroundColor:posts.map(p=>p.type==='publi'?'#F5C78A':'#378ADD'),borderRadius:4}]},options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{ticks:{callback:fmt,font:{size:10}}},y:{ticks:{font:{size:11}}}}}});
+new Chart(document.getElementById('reelEng'),{type:'bar',data:{labels:rl,datasets:[{data:posts.map(p=>+(p.eng/p.views*100).toFixed(1)),backgroundColor:posts.map(p=>p.type==='publi'?'#F5C78A':'#D4537E'),borderRadius:4}]},options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{ticks:{font:{size:10}}},y:{ticks:{font:{size:11}}}}}});
+
+// comments
+const sc={pos:'#3B6D11',neg:'#A32D2D',ask:'#185FA5',misto:'#BA7517',neu:'#888780'};
+const sl={pos:'Positivo',neg:'Negativo',ask:'Pergunta',misto:'Misto',neu:'Neutro'};
+const sbc={pos:'sbpos',neg:'sbneg',ask:'sbask',misto:'sbmisto',neu:'sbneu'};
+const cc={pos:'pos',neg:'neg',ask:'ask',misto:'misto',neu:''};
+const rd={
+  "Cacau em Pó":{total:3331,pos:834,neg:25,ask:424,misto:11,neu:2037,s:{pos:[{l:1195,t:"MEU DEUS NAO SABIA amei!!!!"},{l:1185,t:"da proxima vou tentar abrir com os pés 😂"}],neg:[{l:2956,t:"Gente que ódio usei cacau errado a vida toda 🫨🫨"},{l:22,t:"Comprei 3 marcas diferentes e todos estavam com sabor HORRÍVEL"}],ask:[{l:4933,t:"QUEREM A RECEITA DO BOLO COMPLETINHA?? 😋"},{l:3437,t:"Legenda os vídeos, pq mamães fazendo o bebê dormir têm que ver o vídeo legendado 🥹"}]}},
+  "Giz de Rua":{total:497,pos:97,neg:5,ask:69,misto:5,neu:321,s:{pos:[{l:709,t:"⚠️Não testamos na chuva ainda, só garoa e segurou. Aviso aqui quando chover o que acontece."},{l:136,t:"Amei, vou fazer com meus netos! Umas horas bem agradáveis..."}],neg:[{l:5,t:"Por isso no meu pão de ló eu sempre fervo o cacau no leite. Não estava errado."},{l:0,t:"Fiz bolo de chocolate errado minha vida toda kkkk"}],ask:[{l:74,t:"Quando chegou nossa vez de pintar a rua estão multando."},{l:74,t:"com essa seleção? se passar da fase de grupo já é milagre 😂"}]}},
+  "Marshmallow":{total:196,pos:34,neg:3,ask:23,misto:1,neu:135,s:{pos:[{l:583,t:"Já me realizei em ver você fazendo. Obrigada. Não repetirei 😂"},{l:2,t:"O PIOR É QUE PARECE MUITO BOM KKKKKK"}],neg:[{l:1434,t:"Acho que o pessoal tem dificuldade de comer frutas in natura hahahahahahha (mas ruim não deve ser)"},{l:6,t:"Horrível, parece uma múmia"}],ask:[{l:6,t:"MEO DEOS, 77 REAIS NUM MORANGO? 😱"}]}},
+  "Propaganda IA":{total:266,pos:41,neg:7,ask:32,misto:2,neu:184,s:{pos:[{l:86,t:"Na shopee 90% das propagandas são falsas, eu gosto de olhar as fotos das pessoas que compraram antes."},{l:5,t:"Gostei muito deste tema! Nos ajuda muito."}],neg:[{l:29,t:"Essa bolinhas é maior mentira, comprei na Europa paguei 8 euros e não funcionou nada."},{l:14,t:"Quantidade de produtos com comentários de coisas completamente aleatórias de outros negócios..."}],ask:[{l:60,t:"Se fosse no Japão não teria esse circo. Lá o produto corresponde EXATAMENTE ao que está na embalagem."},{l:55,t:"A TEMU tem spyware no aplicativo — mesmo sem comprar nada, eles te monitoram."}]}},
+  "Pinhão":{total:149,pos:44,neg:0,ask:12,misto:2,neu:91,s:{pos:[{l:82,t:"Amo, não seleciono, jogo tudo na panela, cozinho até ele abrir e vrau pra barriga 😂"},{l:12,t:"Tem que fazer um molhinho de manteiga e erva pra molhar o pinhão. Fica delícia!"}],neg:[],ask:[{l:9,t:"O que tem a ver festa juninha com pinhão? Não entendi rsrs"},{l:2,t:"Coloque uma colher de margarina, ajuda a não colar na panela!"}]}},
+  "Garrafa Térmica":{total:318,pos:63,neg:9,ask:41,misto:4,neu:201,s:{pos:[{l:342,t:"Vamos de garrafa térmica mais barata que é mais fácil de higienizar 👏"},{l:137,t:"Vídeo excelente! Realmente é um problema de design! Profissionais, lutem por um modelo melhor."}],neg:[{l:20,t:"É nojento mesmo, principalmente se tiver um tempo de uso, fica vazando sujeira 🤢"},{l:0,t:"Eu odeio esse tipo de garrafa! Esse canudo fica uma gosma dentro dele, um horror!"}],ask:[{l:26,t:"Vcs fizeram pesquisa com fabricante de TODOS os planetas mesmo? 🧐"}]}},
+  "Pudim Cocada":{total:447,pos:79,neg:15,ask:58,misto:9,neu:286,s:{pos:[{l:45,t:"Afff. Sou tão influenciável 😢 quero fazer"},{l:15,t:"Ficou mais bonito assim desse jeito, e deve ter ficado uma delícia também 😋"}],neg:[{l:469,t:"se der certo fica igual o dela e se der errado da mais certo ainda, ai eu vi vantagens 😂"},{l:429,t:"Vocês não têm vergonha? Eu aqui fazendo reeducação alimentar... 😂😂"}],ask:[{l:22,t:"Quero provar das duas maneiras... e agora?? 😂😍"},{l:20,t:"Caramelo só não pode mexer se água e açúcar juntos logo de início; se for só açúcar pode mexer."}]}},
+  "Massinha":{total:225,pos:60,neg:1,ask:32,misto:4,neu:128,s:{pos:[{l:83,t:"Ahhhhhh, amei que foi aprovado!!! 🥰 A consistência do doce de leite faz diferença!"},{l:49,t:"Fiz essa de farinha de trigo uma vez, durou uns 4 meses maravilhosa guardada num recipiente com tampa."}],neg:[{l:0,t:"Esse forno é ruim mesmo, só passo raiva com ele."}],ask:[{l:12,t:"Quando era criança fiz uma receita de massinha com suco de pózinho como corante, fiz várias cores!"}]}},
+  "Farofa Sazón":{total:160,pos:39,neg:4,ask:19,misto:1,neu:97,s:{pos:[{l:16,t:"A com maisena é ótima pra celíaco! Quando trabalhava em sala de aula trocava e ficava gostoso!"},{l:7,t:"Glutamato monossódico em pó na farofa??? Pelamordedeus… 😂"}],neg:[{l:23,t:"Comprar farofa? Farofa pronta é horrível. Se tem manteiga e farinha em casa você tem farofa"},{l:5,t:"Se tem alho e cebola em casa, não tem como fazer farofa ruim. Sazón faz mal"}],ask:[{l:75,t:"Sazón??? Sério??? Prefiro ir no mercado... haja sódio 😅"},{l:47,t:"Sazón, amigo? 😝"}]}},
+  "SBP Mosquito":{total:162,pos:43,neg:5,ask:31,misto:4,neu:79,s:{pos:[{l:97,t:"Bacana, mas tenho uma versão de 10 reais da china que mata o inseto na hora — sem ficar trocando adesivo!"},{l:2,t:"Gostei! Já comprei vários elétricos da shopee que não funcionam... vou testar!"}],neg:[{l:54,t:"O pernilongo de patas compridas ajuda a reduzir o Aedes. Dá dó das mariposas, elas fazem parte da polinização."},{l:9,t:"O ruim é dormir com uma luz dessa no quarto 😢😢"}],ask:[{l:12,t:"Pega pernilongo que canta no ouvido da gente até nos piores momentos? 😂"},{l:7,t:"Pega pernilongo?"}]}},
+  "Luminária":{total:84,pos:32,neg:1,ask:12,misto:0,neu:39,s:{pos:[{l:177,t:"Eu colocaria por dentro para dar um efeito legal na luz"},{l:64,t:"Depois dessa estamos com quantos anos de azar será? 😂"}],neg:[{l:0,t:"O Dario, no começo do vídeo, fazendo tudo errado 😂"}],ask:[{l:42,t:"Gente, mas quebrar espelho não resseca o mamilo???? 😂"},{l:38,t:"Todos sabem que não pode fazer isso porque dá 7 anos de azar! 😮"}]}},
+};
+
+const tabsEl=document.getElementById('reelTabsComm');
+const panelsEl=document.getElementById('reelPanels');
+let first=true;
+Object.entries(rd).forEach(([reel,d])=>{
+  const id=reel.replace(/\s+/g,'_');
+  const btn=document.createElement('button');
+  btn.className='rtab'+(first?' active':'');
+  btn.textContent=reel;
+  btn.onclick=()=>{
+    document.querySelectorAll('.rtab').forEach(b=>b.classList.remove('active'));
+    document.querySelectorAll('.rpanel').forEach(p=>p.classList.remove('active'));
+    btn.classList.add('active');
+    document.getElementById('rp_'+id).classList.add('active');
+  };
+  tabsEl.appendChild(btn);
+  const tot=d.total;
+  const sents=[{k:'pos',n:d.pos},{k:'ask',n:d.ask},{k:'neu',n:d.neu},{k:'misto',n:d.misto},{k:'neg',n:d.neg}];
+  let sh='';
+  ['pos','ask','neg'].forEach(sk=>{
+    (d.s[sk]||[]).forEach(c=>{
+      sh+=`<div class="ccard ${cc[sk]}"><div class="cmeta"><span class="sbadge ${sbc[sk]}">${sl[sk]}</span><span>❤️ ${c.l}</span></div><div class="ctext">${c.t}</div></div>`;
+    });
+  });
+  const score=d.neg/tot;
+  const panel=document.createElement('div');
+  panel.id='rp_'+id;
+  panel.className='rpanel'+(first?' active':'');
+  panel.innerHTML=`
+    <div class="rsbox">
+      <div class="rsbox-t">📊 ${tot} comentários</div>
+      ${sents.map(s=>`<div class="srow"><div class="slbl">${sl[s.k]}</div><div class="sbw"><div class="sb" style="width:${tot?Math.max(2,s.n/tot*100):0}%;background:${sc[s.k]}"></div></div><div class="scnt">${s.n}</div><div class="spct">${tot?(s.n/tot*100).toFixed(1):0}%</div></div>`).join('')}
+      <div style="margin-top:14px;padding-top:12px;border-top:.5px solid #f0f0ee;">
+        <div style="font-size:12px;color:#888;margin-bottom:5px;">Fit com a audiência</div>
+        <div style="font-size:26px;font-weight:500;color:${score<0.02?'#3B6D11':score<0.05?'#BA7517':'#A32D2D'}">${score<0.01?'⭐ Excelente':score<0.025?'✅ Ótimo':score<0.04?'👍 Bom':'⚠️ Atenção'}</div>
+        <div style="font-size:11px;color:#aaa;margin-top:3px">${(d.pos/tot*100).toFixed(0)}% pos · ${(d.neg/tot*100).toFixed(1)}% neg · ${(d.ask/tot*100).toFixed(0)}% perguntas</div>
+      </div>
+    </div>
+    <div class="csamples"><div class="tct">💬 Comentários representativos</div>${sh}</div>`;
+  panelsEl.appendChild(panel);
+  first=false;
+});
+
+const cd=["27/05","28/05","29/05","30/05","31/05","01/06","02/06","03/06","04/06","05/06","06/06","07/06","08/06","09/06","10/06","11/06","12/06","13/06","14/06","15/06","16/06","17/06","18/06","19/06","20/06","21/06","22/06"];
+new Chart(document.getElementById('commDay'),{type:'bar',data:{labels:cd,datasets:[
+  {label:'Positivo',data:[376,458,97,47,38,17,34,41,38,11,7,12,44,63,79,60,39,19,10,43,5,5,6,32,16,9,7],backgroundColor:'#3B6D11'},
+  {label:'Neutro',data:[878,1159,321,164,130,74,135,184,119,41,35,29,91,201,286,128,97,58,39,79,44,23,14,39,41,32,11],backgroundColor:'#888780'},
+  {label:'Pergunta',data:[191,233,69,46,32,16,23,32,20,12,13,4,12,41,58,32,19,9,5,31,10,11,2,12,8,5,2],backgroundColor:'#185FA5'},
+  {label:'Negativo',data:[11,14,5,1,3,2,3,7,4,2,0,3,0,9,15,1,4,2,0,5,2,0,0,1,0,1,2],backgroundColor:'#A32D2D'}
+]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{stacked:true,ticks:{font:{size:10},autoSkip:true,maxTicksLimit:14,maxRotation:45}},y:{stacked:true,ticks:{font:{size:10}}}}}});
+
+const tl=[{likes:8155,s:'neu',t:"Tíbio e Perônio 😂😂❤️"},{likes:4933,s:'ask',t:"QUEREM A RECEITA DO BOLO COMPLETINHA?? 😋"},{likes:3437,s:'ask',t:"Legenda os vídeos, pq mamães fazendo o bebê dormir têm que ver legendado 🥹"},{likes:2956,s:'neg',t:"Gente que ódio usei cacau errado a vida toda 🫨🫨"},{likes:2533,s:'neu',t:"Morango veda rosca 👏"}];
+const tr=[{replies:25,s:'ask',t:"QUEREM A RECEITA DO BOLO COMPLETINHA?? 😋"},{replies:25,s:'pos',t:"No último bolo coloquei café quente, coado e forte! Outro nível de bolo..."},{replies:25,s:'neu',t:"Tíbio e Perônio 😂😂❤️"},{replies:25,s:'ask',t:"Qual o segredo pra usar cacau 100% no brigadeiro? Pode hidratar assim?"},{replies:25,s:'neu',t:"Usar café quente no lugar da água deve ficar bom tbm"}];
+document.getElementById('topLiked').innerHTML=tl.map(c=>`<div class="tci"><div class="tcm"><span class="sbadge ${sbc[c.s]}">${sl[c.s]}</span><span>❤️ ${c.likes.toLocaleString('pt-BR')}</span></div><div class="tctx">${c.t}</div></div>`).join('');
+document.getElementById('topReplied').innerHTML=tr.map(c=>`<div class="tci"><div class="tcm"><span class="sbadge ${sbc[c.s]}">${sl[c.s]}</span><span>💬 ${c.replies} resp.</span></div><div class="tctx">${c.t}</div></div>`).join('');
+
+const ws=[{w:"receita",n:664},{w:"cacau",n:516},{w:"bolo",n:455},{w:"quero",n:435},{w:"água",n:379},{w:"fazer",n:358},{w:"café",n:355},{w:"fica",n:334},{w:"dica",n:308},{w:"chocolate",n:270},{w:"amei",n:260},{w:"quente",n:224},{w:"leite",n:216},{w:"faço",n:175},{w:"melhor",n:163},{w:"garrafa",n:159},{w:"obrigada",n:148},{w:"gosto",n:128},{w:"vídeo",n:121},{w:"pinhão",n:117},{w:"nunca",n:115},{w:"usar",n:114},{w:"tampa",n:107},{w:"irmãos",n:103},{w:"bicarbonato",n:95}];
+const mw=ws[0].n;
+document.getElementById('wordCloud').innerHTML=ws.map(({w,n})=>{const s=n/mw;return`<span class="wpill ${s>.7?'lg':s>.4?'md':''}">${w} <span style="color:#aaa">(${n})</span></span>`;}).join('');
+</script>
+</body>
+</html>
